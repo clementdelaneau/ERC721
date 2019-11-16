@@ -18,7 +18,7 @@ contract DogRegisterCoin is ERC721 {
 
     mapping (address => bool) public _whitelist;
 
-    mapping (address => Dog[]) breederDogs;
+    mapping (address => Dog[]) public breederDogs;
 
     mapping (uint => Dog) public dogsById;
 
@@ -92,9 +92,10 @@ contract DogRegisterCoin is ERC721 {
        if( _breeder == address(this))
        {
        	dogsInAuction[_nextId] = true;
-       	createAuction(_nextId,5);
+       	_auctionByContract(_nextId);
        }
        _mint(_breeder, _nextId);
+       return true;
 	}
 
 	function deadAnimal(uint _tokenId) public {
@@ -188,11 +189,19 @@ contract DogRegisterCoin is ERC721 {
 
 
 	function createAuction(uint256 _id, uint256 _startingPrice) public {
-		require(_tokenOwner[_id] == msg.sender || ownerOf(_id) == address(this), "sender is not token owner nor contract owner");
-		Auction memory auc = Auction(msg.sender, now, 0, _startingPrice, address(0));
+		require(_tokenOwner[_id] == msg.sender, "sender is not token owner");
+		Auction memory auc = Auction(msg.sender, now,_startingPrice, 0, address(0));
 		dogsInAuction[_id] = true;
 		auction[_id] = auc;
 
+	}
+	
+	
+	function _auctionByContract(uint256 _id) internal {
+	    require(_hasDog(address(this), _id), "sender is not contrat owner");
+	   	Auction memory auc = Auction(address(this), now, 1, 0, address(0));
+		dogsInAuction[_id] = true;
+		auction[_id] = auc;
 	}
 
 	function bidAuction(uint256 _id) public payable {
@@ -211,7 +220,7 @@ contract DogRegisterCoin is ERC721 {
 	}
 
 
-	function claimAuction(uint256 _id) public {
+	function claimAuction(uint256 _id) public payable{
 		require(dogsInAuction[_id] == true);
 		require(now > auction[_id].startTime + 2 days);
 		require(bid[msg.sender] == auction[_id].highestBid);
@@ -242,6 +251,8 @@ function _removeFromArray(uint256 _id) internal {
 	}
 	delete breederDogs[ownerOf(_id)][i];
 }
+
+
 
 
 

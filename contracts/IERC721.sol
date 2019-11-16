@@ -26,7 +26,7 @@ contract IERC721  /*is ERC165 */ {
     ///  function throws for queries about the zero address.
     /// @param _owner An address for whom to query the balance
     /// @return The number of NFTs owned by `_owner`, possibly zero
-    function balanceOf(address _owner) external view returns (uint256);
+    function balanceOf(address _owner) public view returns (uint256);
 
     /// @notice Find the owner of an NFT
     /// @dev NFTs assigned to zero address are considered invalid, and queries

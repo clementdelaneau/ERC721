@@ -39,37 +39,29 @@ contract Arena is DogRegisterCoin {
 
 
 	function agreeToFight(uint256 _id1, uint256 _id2) public payable{
-		uint256 _bid = uint256(msg.value);
 		require(ownerOf(_id1) == msg.sender);
 		require(fightProposition[_id2] == _id1);
-		require(fightsById[_id1 +_id2].bid ==  _bid);
+		require(fightsById[_id1 +_id2].bid ==uint256(msg.value));
 		fightProposition[_id1] = _id2;
 		fightsById[_id1+_id2].accepted = true;
 
-		_fight(_id1, _id2);	
+		uint8 rand = _random();
 
-	}
-
-
-	function _fight(uint256 _id1, uint256 _id2) public payable{
-		require(fightProposition[_id1] == _id2 && fightProposition[_id2] == _id1);
-		require(fightsById[_id1+_id2].accepted = true);
-
-		_random();
-
-		if(_random() == 0) 
+		if(rand == 0) 
 		{
 			fightsById[_id1+_id2].winner = ownerOf(_id1);
-			ownerOf(_id1).transfer(fightsById[_id1 +_id2].bid);
+			ownerOf(_id1).transfer(2*fightsById[_id1 +_id2].bid);
 
 		}
 		else 
 		{
 			fightsById[_id1 + _id2].winner = ownerOf(_id2);
-			ownerOf(_id2).transfer(fightsById[_id1 +_id2].bid);
+			ownerOf(_id2).transfer(2*fightsById[_id1 +_id2].bid);
 		}
-
 	}
+
+
+
 
 
 	function _random() private returns (uint8 random) {

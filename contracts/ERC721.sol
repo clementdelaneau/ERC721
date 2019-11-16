@@ -34,7 +34,7 @@ contract ERC721 is IERC721 {
     
 
 
-    function balanceOf(address _address) external isNonZeroAddress(_address) view returns (uint256) {
+    function balanceOf(address _address) public isNonZeroAddress(_address) view returns (uint256) {
         return _balanceOf[_address];
     }
 
