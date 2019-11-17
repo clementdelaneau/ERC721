@@ -28,7 +28,7 @@ contract DogRegisterCoin is ERC721 {
 
     mapping (uint256 => Auction) public auction; //mapping between dogid and auction
 
-    mapping (address => uint256) bid;
+    mapping (address => uint256) bidderToBid;
 
 
     Dog[] availableDogsToBreed;
@@ -54,6 +54,7 @@ contract DogRegisterCoin is ERC721 {
 
 	struct Auction {
 		address chairperson;
+		address payable[] bidders;
 		uint256 startTime;
 		uint256 startingPrice;
 		uint256 highestBid;
@@ -190,7 +191,13 @@ contract DogRegisterCoin is ERC721 {
 
 	function createAuction(uint256 _id, uint256 _startingPrice) public {
 		require(_tokenOwner[_id] == msg.sender, "sender is not token owner");
-		Auction memory auc = Auction(msg.sender, now,_startingPrice, 0, address(0));
+		Auction memory auc;
+		auc.chairperson = msg.sender;
+		auc.startTime = now;
+		auc.startingPrice = _startingPrice;
+		auc.highestBid = 0;
+		auc.winner = address(0);
+
 		dogsInAuction[_id] = true;
 		auction[_id] = auc;
 
@@ -199,7 +206,13 @@ contract DogRegisterCoin is ERC721 {
 	
 	function _auctionByContract(uint256 _id) internal {
 	    require(_hasDog(address(this), _id), "sender is not contrat owner");
-	   	Auction memory auc = Auction(address(this), now, 1, 0, address(0));
+		Auction memory auc;
+		auc.chairperson = address(this);
+		auc.startTime = now;
+		auc.startingPrice = 1;
+		auc.highestBid = 0;
+		auc.winner = address(0);
+
 		dogsInAuction[_id] = true;
 		auction[_id] = auc;
 	}
@@ -209,25 +222,28 @@ contract DogRegisterCoin is ERC721 {
 		require(dogsInAuction[_id] == true, "dog is not in auction");
 		require(msg.value > auction[_id].highestBid, "msg.value must be superior to the highest bid");
 		require(auction[_id].startTime + 2 days >= now, "auction is finished");
-		bid[msg.sender] = msg.value;
+		bidderToBid[msg.sender] = msg.value;
+		auction[_id].bidders.push(msg.sender);
 		auction[_id].highestBid = msg.value;
 
 	}
 
 	function updateBid(uint256 _id) public payable {
-		require((bid[msg.sender] + msg.value) > auction[_id].highestBid);
-		bid[msg.sender] += msg.value;
+		require((bidderToBid[msg.sender] + msg.value) > auction[_id].highestBid);
+		bidderToBid[msg.sender] += msg.value;
 	}
 
 
 	function claimAuction(uint256 _id) public payable{
 		require(dogsInAuction[_id] == true);
 		require(now > auction[_id].startTime + 2 days);
-		require(bid[msg.sender] == auction[_id].highestBid);
+		require(bidderToBid[msg.sender] == auction[_id].highestBid);
+		auction[_id].winner = msg.sender;
 
+        _repayAuctionLosers(_id);
 		_erc721.transferFrom(ownerOf(_id), msg.sender, _id);
 
-		auction[_id].winner = msg.sender;
+
 	}
 
 
@@ -250,6 +266,18 @@ function _removeFromArray(uint256 _id) internal {
 		i++;
 	}
 	delete breederDogs[ownerOf(_id)][i];
+}
+
+
+function _repayAuctionLosers(uint256 _id) private{
+	for(uint i =0; i< auction[_id].bidders.length; i++) {
+		if(auction[_id].bidders[i] != auction[_id].winner) {
+			auction[_id].bidders[i].transfer(bidderToBid[auction[_id].bidders[i]]);
+			bidderToBid[auction[_id].bidders[i]] = 0;
+		}
+	}
+	bidderToBid[auction[_id].winner] = 0;
+
 }
 
 
