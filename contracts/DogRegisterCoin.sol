@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity ^0.5.12;
 
 
 import "./SafeMath.sol";
@@ -29,6 +29,9 @@ contract DogRegisterCoin is ERC721 {
     mapping (uint256 => Auction) public auction; //mapping between dogid and auction
 
     mapping (address => uint256) bidderToBid;
+
+    mapping (address => bool) canDeclareAnimalToContract;
+    
 
 
     Dog[] availableDogsToBreed;
@@ -61,16 +64,17 @@ contract DogRegisterCoin is ERC721 {
 		address winner;
 	}
 
-	modifier onlyOwner() {
-		require(msg.sender == owner);
+
+	modifier onlyBy(address _address) {
+		require(msg.sender == _address, "sender is not the correct address");
 		_;
 	}
 
-
-	modifier isNotContractOwner() {
-		require(msg.sender != address(this));
+	modifier isRegistered(address _address) {
+		require(_whitelist[_address] == true, "address is not registered");
 		_;
 	}
+
 
 
 	function contractBalance() public view returns (uint256) {
@@ -79,31 +83,31 @@ contract DogRegisterCoin is ERC721 {
 
      
     //whitelist 
-	function registerBreeder(address _breeder) public isNonZeroAddress(_breeder) onlyOwner() {
+	function registerBreeder(address _breeder) public isNonZeroAddress(_breeder) onlyBy(owner) {
      require(_whitelist[_breeder] == false, "breeder already registered");
      _whitelist[_breeder] = true;
 	}
 
 
 	function declareAnimal(address payable _breeder, Race _race, bool _isMale, uint256 _age, uint256 _category) public isNonZeroAddress(_breeder) returns (bool) {
+		require(_breeder == msg.sender || (_breeder == address(uint160(address(this))) && canDeclareAnimalToContract[msg.sender]), "breeder address is not correct");
 		_nextId++;
        Dog memory dog = Dog(_nextId, _race, _isMale, _age, _category);
        breederDogs[_breeder].push(dog);
        dogsById[_nextId] = dog;
        if( _breeder == address(this))
        {
-       	dogsInAuction[_nextId] = true;
        	_auctionByContract(_nextId);
        }
        _mint(_breeder, _nextId);
        return true;
 	}
 
-	function deadAnimal(uint _tokenId) public {
-		require(msg.sender == ownerOf(_tokenId), "sender is not token owner");
+	function deadAnimal(uint _tokenId) public onlyBy(ownerOf(_tokenId)){
+		address tokenOwner = ownerOf(_tokenId);
 		_burn(msg.sender, _tokenId);
 		delete dogsById[_tokenId];
-		_removeFromArray(_tokenId);
+		_removeFromArray(tokenOwner, _tokenId);
 	}
 
 
@@ -125,6 +129,7 @@ contract DogRegisterCoin is ERC721 {
 
 		else 
 		{ 
+			canDeclareAnimalToContract[msg.sender] = true;
 			declareAnimal(address(uint160(address(this))), _race, true, 0, _category);
 
 		}
@@ -132,8 +137,7 @@ contract DogRegisterCoin is ERC721 {
 	}
 
 
-	function proposeToBreed(uint256 _dogId) public {
-		require(msg.sender == ownerOf(_dogId), "sender is not token owner");
+	function proposeToBreed(uint256 _dogId) public onlyBy(ownerOf(_dogId)) {
 		require(availableToBreed[_dogId] == false, "dog is already available to breed");
 		availableToBreed[_dogId] = true;
 	}
@@ -185,12 +189,11 @@ contract DogRegisterCoin is ERC721 {
 
 	function getHighestBid(uint256 _id) public view returns (uint256){
 		return auction[_id].highestBid;
-
 	}
 
 
-	function createAuction(uint256 _id, uint256 _startingPrice) public {
-		require(_tokenOwner[_id] == msg.sender, "sender is not token owner");
+	function createAuction(uint256 _id, uint256 _startingPrice) public onlyBy(ownerOf(_id)){
+		require(!dogsInAuction[_id], "dog is already in auction");
 		Auction memory auc;
 		auc.chairperson = msg.sender;
 		auc.startTime = now;
@@ -204,8 +207,10 @@ contract DogRegisterCoin is ERC721 {
 	}
 	
 	
-	function _auctionByContract(uint256 _id) internal {
+	function _auctionByContract(uint256 _id) internal  {
 	    require(_hasDog(address(this), _id), "sender is not contrat owner");
+		require(!dogsInAuction[_id], "dog is already in auction");
+
 		Auction memory auc;
 		auc.chairperson = address(this);
 		auc.startTime = now;
@@ -215,7 +220,9 @@ contract DogRegisterCoin is ERC721 {
 
 		dogsInAuction[_id] = true;
 		auction[_id] = auc;
+	    canDeclareAnimalToContract[msg.sender] = false;
 	}
+
 
 	function bidAuction(uint256 _id) public payable {
 		require(_tokenOwner[_id] != msg.sender, "token owner can't be message sender");
@@ -229,15 +236,16 @@ contract DogRegisterCoin is ERC721 {
 	}
 
 	function updateBid(uint256 _id) public payable {
-		require((bidderToBid[msg.sender] + msg.value) > auction[_id].highestBid);
+		require((bidderToBid[msg.sender] + msg.value) > auction[_id].highestBid, "updated bid must be superior to current highest bid");
 		bidderToBid[msg.sender] += msg.value;
+		auction[_id].highestBid = bidderToBid[msg.sender];
 	}
 
 
 	function claimAuction(uint256 _id) public payable{
-		require(dogsInAuction[_id] == true);
-		require(now > auction[_id].startTime + 2 days);
-		require(bidderToBid[msg.sender] == auction[_id].highestBid);
+		require(dogsInAuction[_id] == true, "dog must be in auction");
+		require(now > auction[_id].startTime + 2 days, "auction is not finished yet");
+		require(bidderToBid[msg.sender] == auction[_id].highestBid, "sender is not the winner");
 		auction[_id].winner = msg.sender;
 
         _repayAuctionLosers(_id);
@@ -248,24 +256,28 @@ contract DogRegisterCoin is ERC721 {
 
 
 
-	function TransferAnimal(address _from, address payable _to, uint256 _id) public {
-		require(ownerOf(_id) == _from);
-		require(dogsInAuction[_id] == false);
-		require(_whitelist[_to] == true);
-		_removeFromArray(_id);
+	function TransferAnimal(address _from, address payable _to, uint256 _id) public isRegistered(_to) {
+		require(dogsInAuction[_id] == false, "can't transfer animal which is in auction");
+		_removeFromArray(_from, _id);
 		_erc721.transferFrom(_from, _to , _id);
 
 	}
 
 
 
-function _removeFromArray(uint256 _id) internal {
+function _removeFromArray(address tokenOwner, uint256 _id) internal {
     uint i = 0;
-	while (breederDogs[ownerOf(_id)][i].id != _id)
+    uint j =0;
+    uint length = breederDogs[tokenOwner].length;
+	while(breederDogs[tokenOwner][i].id != _id)
 	{
 		i++;
 	}
-	delete breederDogs[ownerOf(_id)][i];
+	delete breederDogs[tokenOwner][i];
+	for(j=i; j<length-1; j++) {
+		breederDogs[tokenOwner][j] = breederDogs[tokenOwner][j+1];
+	}
+	delete breederDogs[tokenOwner][length-1];
 }
 
 

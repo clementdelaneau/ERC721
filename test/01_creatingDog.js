@@ -31,13 +31,15 @@ contract("CreatingDogs", accounts =>  {
 
 	)
 
-
+/*
 	it('should not create a dog if breeder is the 0x0 address', async()=> {
 
-	   // await contractInstance.declareAnimal(address(0),race,isMale,age,category, {from : address});
+	    return contractInstance.declareAnimal(address(0),race,isMale,age,category, {from : address(0)}).
+	    	then(assert.fail).catch(function(error){assert(true);
+	    	})
 
 
-	})
+	})*/
 
 
 
@@ -77,7 +79,7 @@ contract("CreatingDogs", accounts =>  {
 
    })
 
-
+/*
    it('should not claim auction before the end date', async() => {
    	await contractInstance.declareAnimal(accounts[1],0,0,0,0, {from :accounts[1]})
    	await contractInstance.createAuction(1,5, {from: accounts[1]})
@@ -91,7 +93,7 @@ contract("CreatingDogs", accounts =>  {
 
 
 
-   })
+   })*/
 
 
 })

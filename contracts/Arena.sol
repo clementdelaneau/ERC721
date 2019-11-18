@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity ^0.5.12;
 
 import "./DogRegisterCoin.sol";
 
@@ -26,9 +26,10 @@ contract Arena is DogRegisterCoin {
 
 
 	function proposeToFight(uint256 _id1, uint256 _id2) public payable{
-		require(ownerOf(_id1) == msg.sender);
-		require(dogsInAuction[_id1] == false);
-		require(msg.value > 0);
+		require(ownerOf(_id1) == msg.sender, "id1 have to be owned by sender");
+		require(ownerOf(_id2) != msg.sender, "id2 can't be from sender");
+		require(dogsInAuction[_id1] == false && dogsInAuction[_id2] == false, "dogs must not be in auction");
+		require(msg.value > 0, "value must be strictly positive");
 		fightProposition[_id1] = _id2;
 		uint256 _bid = uint256(msg.value);
 		Fight memory fight = Fight(_id1, _id2, _bid, false, address(0));
