@@ -1,6 +1,6 @@
-const DogRegisterCoin = artifacts.require("./DogRegisterCoin.sol")
+const Arena = artifacts.require("./Arena.sol")
 
 module.exports = function(deployer) {
-	deployer.deploy(DogRegisterCoin);
+	deployer.deploy(Arena);
 };
 

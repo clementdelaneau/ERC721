@@ -1,14 +1,13 @@
 pragma solidity ^0.5.12;
 
-import "./DogRegisterCoin.sol";
+import "./Breedding.sol";
 
-
-contract Arena is DogRegisterCoin {
+contract Arena is Breedding {
 
 
 
 	mapping(uint256 => uint256) public fightProposition;
-	mapping(uint256 => Fight) public fightsById; //fight id is sum of the two dogs ids
+	mapping(uint256 => Fight) public fightsById; 
 
 	 uint256 private _nonce;
 
@@ -25,39 +24,40 @@ contract Arena is DogRegisterCoin {
 
 
 
-	function proposeToFight(uint256 _id1, uint256 _id2) public payable{
-		require(ownerOf(_id1) == msg.sender, "id1 have to be owned by sender");
-		require(ownerOf(_id2) != msg.sender, "id2 can't be from sender");
-		require(dogsInAuction[_id1] == false && dogsInAuction[_id2] == false, "dogs must not be in auction");
+	function proposeToFight(uint256 _myDog, uint256 _opponent) public payable {
+		require(ownerOf(_myDog) == msg.sender, "_myDog have to be owned by sender");
+		require(ownerOf(_opponent) != msg.sender, "_opponent can't be from sender");
+		require(dogsInAuction[_myDog] == false && dogsInAuction[_opponent] == false, "dogs must not be in auction");
 		require(msg.value > 0, "value must be strictly positive");
-		fightProposition[_id1] = _id2;
+		fightProposition[_myDog] = _opponent;
 		uint256 _bid = uint256(msg.value);
-		Fight memory fight = Fight(_id1, _id2, _bid, false, address(0));
-		fightsById[_id1+_id2] = fight;
+		Fight memory fight = Fight(_myDog, _opponent, _bid, false, address(0));
+		fightsById[_myDog] = fight;
 
 
 	}
 
 
-	function agreeToFight(uint256 _id1, uint256 _id2) public payable{
-		require(ownerOf(_id1) == msg.sender);
-		require(fightProposition[_id2] == _id1);
-		require(fightsById[_id1 +_id2].bid ==uint256(msg.value));
-		fightProposition[_id1] = _id2;
-		fightsById[_id1+_id2].accepted = true;
+	function agreeToFight(uint256 _myDog, uint256 _opponent) public payable{
+		require(ownerOf(_myDog) == msg.sender);
+		require(fightProposition[_opponent] == _myDog);
+		require(fightsById[_opponent].bid ==uint256(msg.value));
+		require(fightsById[_opponent].accepted == false);
+		fightProposition[_myDog] = _opponent;
+		fightsById[_opponent].accepted = true;
 
 		uint8 rand = _random();
 
 		if(rand == 0) 
 		{
-			fightsById[_id1+_id2].winner = ownerOf(_id1);
-			ownerOf(_id1).transfer(2*fightsById[_id1 +_id2].bid);
+			fightsById[_opponent].winner = ownerOf(_myDog);
+			ownerOf(_myDog).transfer(2*fightsById[_opponent].bid);
 
 		}
 		else 
 		{
-			fightsById[_id1 + _id2].winner = ownerOf(_id2);
-			ownerOf(_id2).transfer(2*fightsById[_id1 +_id2].bid);
+			fightsById[_opponent].winner = ownerOf(_opponent);
+			ownerOf(_opponent).transfer(2*fightsById[_opponent].bid);
 		}
 	}
 

@@ -14,6 +14,12 @@ contract ERC721 is IERC721 {
     
 
 
+
+    modifier onlyBy(address _address)  {
+        require(msg.sender == _address, "sender is not the correct address");
+        _;
+    }
+
     modifier isNonZeroAddress(address _address) { 
         require (_address != address(0), "address 0x0 is not valid"); 
         _; 
@@ -39,7 +45,7 @@ contract ERC721 is IERC721 {
     }
 
 
-    function ownerOf(uint256 _tokenId) internal isNonZeroAddress(_tokenOwner[_tokenId]) view returns (address payable) {
+    function ownerOf(uint256 _tokenId) public isNonZeroAddress(_tokenOwner[_tokenId]) view returns (address payable) {
         return _tokenOwner[_tokenId];
 
     }

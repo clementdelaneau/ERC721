@@ -3,34 +3,28 @@ pragma solidity ^0.5.12;
 
 import "./SafeMath.sol";
 import "./ERC721.sol";
-//import "./BreedSystem.sol";
-//import "./Auction.sol";
-//import "./Arena.sol";
+
+contract DogRegisterCoin is  ERC721 {
+
+	 ERC721 internal _erc721;
+
+	 address payable public owner;
 
 
-contract DogRegisterCoin is ERC721 {
-
-    ERC721 private _erc721;
-    address payable public owner;
-
-    uint private _nextId;
+    uint256 internal _nextId;
 
 
     mapping (address => bool) public _whitelist;
+    mapping (uint256 => bool) public dogsInAuction; //dogid => bool
 
-    mapping (address => Dog[]) public breederDogs;
 
     mapping (uint => Dog) public dogsById;
 
     mapping (uint256 => bool) public availableToBreed;
+         mapping (address => Dog[]) public breederDogs;
 
-    mapping (uint256 => bool) public dogsInAuction; //dogid => bool
 
-    mapping (uint256 => Auction) public auction; //mapping between dogid and auction
 
-    mapping (address => uint256) bidderToBid;
-
-    mapping (address => bool) canDeclareAnimalToContract;
     
 
 
@@ -48,27 +42,18 @@ contract DogRegisterCoin is ERC721 {
 
 
 	struct Dog {
-		uint id;
+		uint256 id;
 		Race race;
 		bool isMale;
-		uint256 age;
-		uint256 category;
-	}
-
-	struct Auction {
-		address chairperson;
-		address payable[] bidders;
-		uint256 startTime;
-		uint256 startingPrice;
-		uint256 highestBid;
-		address winner;
+		uint8 age;
+		uint8 category;
 	}
 
 
-	modifier onlyBy(address _address) {
-		require(msg.sender == _address, "sender is not the correct address");
-		_;
-	}
+
+
+
+
 
 	modifier isRegistered(address _address) {
 		require(_whitelist[_address] == true, "address is not registered");
@@ -89,19 +74,17 @@ contract DogRegisterCoin is ERC721 {
 	}
 
 
-	function declareAnimal(address payable _breeder, Race _race, bool _isMale, uint256 _age, uint256 _category) public isNonZeroAddress(_breeder) returns (bool) {
-		require(_breeder == msg.sender || (_breeder == address(uint160(address(this))) && canDeclareAnimalToContract[msg.sender]), "breeder address is not correct");
+	function declareAnimal(address payable _breeder, Race _race, bool _isMale, uint8 _age, uint8 _category) public isNonZeroAddress(_breeder) returns (bool) {
+		require(_breeder == msg.sender, "breeder address is not correct");
 		_nextId++;
        Dog memory dog = Dog(_nextId, _race, _isMale, _age, _category);
        breederDogs[_breeder].push(dog);
        dogsById[_nextId] = dog;
-       if( _breeder == address(this))
-       {
-       	_auctionByContract(_nextId);
-       }
+
        _mint(_breeder, _nextId);
        return true;
 	}
+
 
 	function deadAnimal(uint _tokenId) public onlyBy(ownerOf(_tokenId)){
 		address tokenOwner = ownerOf(_tokenId);
@@ -111,37 +94,23 @@ contract DogRegisterCoin is ERC721 {
 	}
 
 
-	function breedAnimal(uint256 _dogId1, uint256 _dogId2) public {
-		require(dogsById[_dogId1].isMale == true && dogsById[_dogId2].isMale == false || dogsById[_dogId1].isMale == false && dogsById[_dogId2].isMale == true, "not possible to breed same sex animals");
-		require(_hasDog(msg.sender, _dogId1) || _hasDog(msg.sender, _dogId2), "message sender is not one of the token owner");
-		require(availableToBreed[_dogId1] && availableToBreed[_dogId2], "dogs have to be available to breed");
-		
 
-		Race _race = _determineRaceAfterBreed(_dogId1, _dogId2);
-		uint256 _category = (dogsById[_dogId1].category + dogsById[_dogId2].category)/2;
+	
+function TransferAnimal(address payable _to, uint256 _id) public onlyBy(ownerOf(_id)) {
+	require(dogsInAuction[_id] == false, "can't transfer animal which is in auction");
+	_erc721.transferFrom(msg.sender, _to, _id);
+	_removeFromArray(msg.sender,_id);
+	breederDogs[_to].push(dogsById[_id]);
 
-		if(_hasDog(msg.sender, _dogId1) && _hasDog(msg.sender, _dogId2))
-		{
-			declareAnimal(msg.sender, _race, true, 0, _category);
+}
 
+/*
+	function TransferAnimalFrom(address _from, address payable _to, uint256 _id) public isRegistered(_to) {
+		require(dogsInAuction[_id] == false, "can't transfer animal which is in auction");
+		_removeFromArray(_from, _id);
+		_erc721.transferFrom(_from, _to , _id);
 
-		}
-
-		else 
-		{ 
-			canDeclareAnimalToContract[msg.sender] = true;
-			declareAnimal(address(uint160(address(this))), _race, true, 0, _category);
-
-		}
-
-	}
-
-
-	function proposeToBreed(uint256 _dogId) public onlyBy(ownerOf(_dogId)) {
-		require(availableToBreed[_dogId] == false, "dog is already available to breed");
-		availableToBreed[_dogId] = true;
-	}
-
+	}*/
 
 
 	function _hasDog(address _breeder, uint256 _dogId) internal view returns (bool success) {
@@ -157,114 +126,6 @@ contract DogRegisterCoin is ERC721 {
 
 	}
 
-	function _determineRaceAfterBreed(uint256 _id1, uint256 _id2) internal view returns (Race race){
-		Dog memory _dog1 = dogsById[_id1];
-		Dog memory _dog2 = dogsById[_id2];
-
-		if((_dog1.race == Race.Labrador && _dog2.race == Race.Pitbull) || (_dog1.race == Race.Pitbull && _dog2.race == Race.Labrador))
-		{
-			race = Race.Bullador;
-		}
-		else if((_dog1.race == Race.Pitbull && _dog2.race == Race.Husky) || (_dog1.race == Race.Husky && _dog2.race == Race.Pitbull))
-		{
-			race = Race.Pitsky;
-		}
-		else if((_dog1.race == Race.Terrier && _dog2.race == Race.Bouldog) || (_dog1.race == Race.Bouldog && _dog2.race == Race.Terrier))
-		{
-			race = Race.Pitbull;
-		}
-		else if((_dog1.race == Race.Labrador && _dog2.race == Race.Husky) || (_dog1.race == Race.Husky && _dog2.race == Race.Labrador))
-		{
-			race = Race.Labrador_Husky;
-		}
-		else 
-		{
-			race = Race.Unknown;
-		} 
-		return race;
-
-	} 
-
-
-
-	function getHighestBid(uint256 _id) public view returns (uint256){
-		return auction[_id].highestBid;
-	}
-
-
-	function createAuction(uint256 _id, uint256 _startingPrice) public onlyBy(ownerOf(_id)){
-		require(!dogsInAuction[_id], "dog is already in auction");
-		Auction memory auc;
-		auc.chairperson = msg.sender;
-		auc.startTime = now;
-		auc.startingPrice = _startingPrice;
-		auc.highestBid = 0;
-		auc.winner = address(0);
-
-		dogsInAuction[_id] = true;
-		auction[_id] = auc;
-
-	}
-	
-	
-	function _auctionByContract(uint256 _id) internal  {
-	    require(_hasDog(address(this), _id), "sender is not contrat owner");
-		require(!dogsInAuction[_id], "dog is already in auction");
-
-		Auction memory auc;
-		auc.chairperson = address(this);
-		auc.startTime = now;
-		auc.startingPrice = 1;
-		auc.highestBid = 0;
-		auc.winner = address(0);
-
-		dogsInAuction[_id] = true;
-		auction[_id] = auc;
-	    canDeclareAnimalToContract[msg.sender] = false;
-	}
-
-
-	function bidAuction(uint256 _id) public payable {
-		require(_tokenOwner[_id] != msg.sender, "token owner can't be message sender");
-		require(dogsInAuction[_id] == true, "dog is not in auction");
-		require(msg.value > auction[_id].highestBid, "msg.value must be superior to the highest bid");
-		require(auction[_id].startTime + 2 days >= now, "auction is finished");
-		bidderToBid[msg.sender] = msg.value;
-		auction[_id].bidders.push(msg.sender);
-		auction[_id].highestBid = msg.value;
-
-	}
-
-	function updateBid(uint256 _id) public payable {
-		require((bidderToBid[msg.sender] + msg.value) > auction[_id].highestBid, "updated bid must be superior to current highest bid");
-		bidderToBid[msg.sender] += msg.value;
-		auction[_id].highestBid = bidderToBid[msg.sender];
-	}
-
-
-	function claimAuction(uint256 _id) public payable{
-		require(dogsInAuction[_id] == true, "dog must be in auction");
-		require(now > auction[_id].startTime + 2 days, "auction is not finished yet");
-		require(bidderToBid[msg.sender] == auction[_id].highestBid, "sender is not the winner");
-		auction[_id].winner = msg.sender;
-
-        _repayAuctionLosers(_id);
-		_erc721.transferFrom(ownerOf(_id), msg.sender, _id);
-
-
-	}
-
-
-
-	function TransferAnimal(address _from, address payable _to, uint256 _id) public isRegistered(_to) {
-		require(dogsInAuction[_id] == false, "can't transfer animal which is in auction");
-		_removeFromArray(_from, _id);
-		_erc721.transferFrom(_from, _to , _id);
-
-	}
-
-
-
 function _removeFromArray(address tokenOwner, uint256 _id) internal {
     uint i = 0;
     uint j =0;
@@ -273,22 +134,18 @@ function _removeFromArray(address tokenOwner, uint256 _id) internal {
 	{
 		i++;
 	}
+	if(i == length-1) {
 	delete breederDogs[tokenOwner][i];
+
+	}
+	else {
 	for(j=i; j<length-1; j++) {
 		breederDogs[tokenOwner][j] = breederDogs[tokenOwner][j+1];
 	}
 	delete breederDogs[tokenOwner][length-1];
-}
 
-
-function _repayAuctionLosers(uint256 _id) private{
-	for(uint i =0; i< auction[_id].bidders.length; i++) {
-		if(auction[_id].bidders[i] != auction[_id].winner) {
-			auction[_id].bidders[i].transfer(bidderToBid[auction[_id].bidders[i]]);
-			bidderToBid[auction[_id].bidders[i]] = 0;
-		}
 	}
-	bidderToBid[auction[_id].winner] = 0;
+	length--;
 
 }
 
