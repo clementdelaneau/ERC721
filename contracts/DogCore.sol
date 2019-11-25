@@ -4,13 +4,25 @@ import "./Arena.sol";
 
 contract DogCore is Arena {
 	
-	    address public newContractAddress;
 
 
-    function setNewAddress(address _new) external onlyBy(owner) {
+function() external payable {
 
-        newContractAddress = _new;
-    }
+}
+
+
+function getAvailableBalance() external view onlyBy(owner) returns (uint256) {
+		return availableBalance;
+}
+
+
+function withdrawAvailableBalance() external onlyBy(owner) {
+	require(availableBalance > 0.1 ether,"availableBalance too small");
+
+	owner.transfer(availableBalance);
+
+}
+
 
 
 }

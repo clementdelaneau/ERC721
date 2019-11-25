@@ -11,19 +11,15 @@ using SafeMath for uint256;
     mapping (address => uint256) public bidderToBid;
 
 
-
-
-
-
-
 		struct Auction {
-		address chairperson;
+		address payable chairperson;
 		address payable[] bidders;
 		uint256 startingPrice;
 		uint256 startTime;
 		uint256 highestBid;
 		address winner;
 	}
+
 
 		function _declareAnimalToContract( Race _race, bool _isMale, uint8 _age, uint8 _category) internal returns (bool) {
 		address payable breeder = address(uint160(address(this)));
@@ -37,6 +33,7 @@ using SafeMath for uint256;
        _mint(breeder, _nextId);
        return true;
 	}
+	
 
 	function getHighestBid(uint256 _id) public view returns (uint256){
 		return auction[_id].highestBid;
@@ -89,6 +86,14 @@ using SafeMath for uint256;
         _repayAuctionLosers(_id);
 		_erc721.transferFrom(ownerOf(_id), msg.sender, _id);
 
+		if(auction[_id].chairperson != address(uint160(address(this)))) {
+			auction[_id].chairperson.transfer(auction[_id].highestBid);
+		}
+
+		else {
+			availableBalance.add(auction[_id].highestBid);
+		}
+
 
 	}
 
@@ -96,7 +101,7 @@ using SafeMath for uint256;
 		require(!dogsInAuction[_id], "dog is already in auction");
 
 		Auction memory auc;
-		auc.chairperson = address(this);
+		auc.chairperson = address(uint160(address(this)));
 		auc.startTime = now;
 		auc.startingPrice = 1;
 		auc.highestBid = 0;

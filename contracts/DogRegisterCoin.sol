@@ -9,7 +9,7 @@ contract DogRegisterCoin is  ERC721 {
 	 ERC721 internal _erc721;
 
 	 address payable public owner;
-
+     uint256 internal availableBalance;
 
     uint256 internal _nextId;
 
@@ -21,7 +21,8 @@ contract DogRegisterCoin is  ERC721 {
     mapping (uint => Dog) public dogsById;
 
     mapping (uint256 => bool) public availableToBreed;
-         mapping (address => Dog[]) public breederDogs;
+    mapping (address => Dog[]) public breederDogs;
+
 
 
 
@@ -58,12 +59,6 @@ contract DogRegisterCoin is  ERC721 {
 	modifier isRegistered(address _address) {
 		require(_whitelist[_address] == true, "address is not registered");
 		_;
-	}
-
-
-
-	function contractBalance() public view returns (uint256) {
-		return address(this).balance;
 	}
 
      

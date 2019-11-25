@@ -1,6 +1,6 @@
-const Arena = artifacts.require("./Arena.sol")
+const DogCore = artifacts.require("./DogCore.sol")
 
 module.exports = function(deployer) {
-	deployer.deploy(Arena);
+	deployer.deploy(DogCore);
 };
 

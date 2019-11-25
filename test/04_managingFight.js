@@ -8,7 +8,7 @@ contract('managingFight', accounts => {
 	
 	
 	
-	it('should propose create and process a fight', async() => {
+	it('should propose, create and process a fight', async() => {
      	await contractInstance.declareAnimal(accounts[1],0,0,0,0, {from :accounts[1]})
 		await contractInstance.declareAnimal(accounts[2],1,1,0,3, {from :accounts[2]})
 

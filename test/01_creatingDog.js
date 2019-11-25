@@ -1,10 +1,9 @@
 const DogRegisterCoin = artifacts.require("./DogRegisterCoin.sol")
 let contractInstance
-//let tryCatch = require("./exceptions.js").tryCatch;
-//let errTypes = require("./exceptions.js").errTypes;
-//var should = require('chai').should()
-//var expect = require('chai').expect()
-const PREFIX = "Returned error: VM Exception while processing transaction: ";
+
+let tryCatch = require("./exceptions.js").tryCatch;
+let errTypes = require("./exceptions.js").errTypes;
+
 
 contract("CreatingDogs", accounts =>  {
 	beforeEach('setup contract for each test', async () => {
@@ -36,7 +35,7 @@ contract("CreatingDogs", accounts =>  {
 	)
 	
 	
-	it('should burn token', async() => {
+	it('should burn token only by owner', async() => {
 		
 		await contractInstance.declareAnimal(accounts[1],race,isMale,age,category, {from :accounts[1]})	
 		await contractInstance.deadAnimal(1, {from : accounts[1]})
@@ -59,18 +58,19 @@ contract("CreatingDogs", accounts =>  {
 
 	})
 	
+	it('should not burn token if not owner', async() => {
+		
+		await contractInstance.declareAnimal(accounts[1],race,isMale,age,category, {from :accounts[1]})	
+		
+		await tryCatch(contractInstance.deadAnimal(1, {from : accounts[2]}), errTypes.revert)
+			
+	})
+	
 
  
-    it('ss',async() => {
-		try {
-		await contractInstance.declareAnimal(accounts[1],0,0,0,0, {from: accounts[2]})
-		assert.fail('expected error not thrown')
-
-		}
-		catch(e) {
-			err = 'revert breeder address is not correct'
-		assert.equal(e.message, PREFIX + err + " -- Reason given: breeder address is not correct." )
-}
+    it('should not declare animal if breeder address is not sender',async() => {
+		
+		await tryCatch(contractInstance.declareAnimal(accounts[1],0,0,0,0, {from: accounts[2]}), errTypes.revert)
 })
 
 

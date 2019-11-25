@@ -1,9 +1,9 @@
-const Breedding = artifacts.require("./Breedding.sol")
+const Breeding = artifacts.require("./Breeding.sol")
 let contractInstance
 
-contract('managingBreedding', accounts => {
+contract('managingBreeding', accounts => {
 	beforeEach('setup contract for each test', async () => {
-		contractInstance = await Breedding.new({from : accounts[0]})
+		contractInstance = await Breeding.new({from : accounts[0]})
 	})
 	
 	

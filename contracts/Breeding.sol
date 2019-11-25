@@ -2,7 +2,7 @@ pragma solidity ^0.5.12;
 
 import "./Auction.sol";
 
-contract Breedding is AuctionSystem{
+contract Breeding is AuctionSystem{
 
 
 		function proposeToBreed(uint256 _dogId) public onlyBy(ownerOf(_dogId)) {

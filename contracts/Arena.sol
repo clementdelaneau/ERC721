@@ -1,8 +1,8 @@
 pragma solidity ^0.5.12;
 
-import "./Breedding.sol";
+import "./Breeding.sol";
 
-contract Arena is Breedding {
+contract Arena is Breeding {
 
 
 
