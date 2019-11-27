@@ -91,7 +91,7 @@ using SafeMath for uint256;
 		}
 
 		else {
-			availableBalance.add(auction[_id].highestBid);
+			availableBalance+=auction[_id].highestBid;
 		}
 
 
