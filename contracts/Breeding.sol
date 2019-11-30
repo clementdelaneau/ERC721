@@ -5,6 +5,7 @@ import "./Auction.sol";
 contract Breeding is AuctionSystem{
 
 
+
 		function proposeToBreed(uint256 _dogId) public onlyBy(ownerOf(_dogId)) {
 		require(availableToBreed[_dogId] == false, "dog is already available to breed");
 		availableToBreed[_dogId] = true;
@@ -23,7 +24,6 @@ contract Breeding is AuctionSystem{
 		if(_hasDog(msg.sender, _dogId1) && _hasDog(msg.sender, _dogId2))
 		{
 			declareAnimal(msg.sender, _race, true, 0, _category);
-
 
 		}
 

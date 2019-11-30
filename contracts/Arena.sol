@@ -5,6 +5,7 @@ import "./Breeding.sol";
 contract Arena is Breeding {
 
 
+    event FightProcessed(uint256 dog1, uint256 dog2, address winner);
 
 	mapping(uint256 => uint256) public fightProposition;
 	mapping(uint256 => Fight) public fightsById; 
@@ -45,20 +46,23 @@ contract Arena is Breeding {
 		require(fightsById[_opponent].accepted == false);
 		fightProposition[_myDog] = _opponent;
 		fightsById[_opponent].accepted = true;
-
+        address payable ownerMyDog = address(uint160(ownerOf(_myDog)));
+        address payable ownerOpponent = address(uint160(ownerOf(_opponent)));
 		uint8 rand = _random();
 
 		if(rand == 0) 
 		{
 			fightsById[_opponent].winner = ownerOf(_myDog);
-			ownerOf(_myDog).transfer(2*fightsById[_opponent].bid);
+			ownerMyDog.transfer(2*fightsById[_opponent].bid);
 
 		}
 		else 
 		{
 			fightsById[_opponent].winner = ownerOf(_opponent);
-			ownerOf(_opponent).transfer(2*fightsById[_opponent].bid);
+			ownerOpponent.transfer(2*fightsById[_opponent].bid);
 		}
+
+		emit FightProcessed(_opponent, _myDog, fightsById[_opponent].winner);
 	}
 
 

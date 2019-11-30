@@ -5,10 +5,11 @@ import "./DogRegisterCoin.sol";
 contract AuctionSystem is DogRegisterCoin {
 using SafeMath for uint256;
 
+    event AuctionCreated(uint256 id, uint256 startingPrice, address chairperson);
+    event AuctionClaimed(uint256 id, address winner);
+
     mapping (uint256 => Auction) public auction; //mapping between dogid and auction
-
-
-    mapping (address => uint256) public bidderToBid;
+    mapping (address => uint256) private _bidderToBid;
 
 
 		struct Auction {
@@ -22,16 +23,19 @@ using SafeMath for uint256;
 
 
 		function _declareAnimalToContract( Race _race, bool _isMale, uint8 _age, uint8 _category) internal returns (bool) {
-		address payable breeder = address(uint160(address(this)));
+		address breeder = address(this);
 		_nextId++;
        Dog memory dog = Dog(_nextId, _race, _isMale, _age, _category);
-       breederDogs[breeder].push(dog);
        dogsById[_nextId] = dog;
 
        	_auctionByContract(_nextId);
        
        _mint(breeder, _nextId);
        return true;
+	}
+
+	function getBid() public view onlyBy(msg.sender) returns(uint256) {
+		return _bidderToBid[msg.sender];
 	}
 	
 
@@ -52,49 +56,53 @@ using SafeMath for uint256;
 		dogsInAuction[_id] = true;
 		auction[_id] = auc;
 
+		emit AuctionCreated(_id, _startingPrice, msg.sender);
+
 	}
 	
 	
 
 
 	function bidAuction(uint256 _id) public payable {
-		require(_tokenOwner[_id] != msg.sender, "token owner can't be message sender");
+		require(ownerOf(_id) != msg.sender, "token owner can't be message sender");
 		require(dogsInAuction[_id] == true, "dog is not in auction");
 		require(msg.value > auction[_id].highestBid, "msg.value must be superior to the highest bid");
 		require(auction[_id].startTime + 2 days >= now, "auction is finished");
-		require(bidderToBid[msg.sender] == 0, "bidder cannot bid on several auctions in the same time");
-		bidderToBid[msg.sender] = msg.value;
+		require(_bidderToBid[msg.sender] == 0, "bidder cannot bid on several auctions in the same time");
+		_bidderToBid[msg.sender] = msg.value;
 		auction[_id].bidders.push(msg.sender);
 		auction[_id].highestBid = msg.value;
 
 	}
 
 	function updateBid(uint256 _id) public payable {
-		require((bidderToBid[msg.sender] + msg.value) > auction[_id].highestBid, "updated bid must be superior to current highest bid");
+		require((_bidderToBid[msg.sender] + msg.value) > auction[_id].highestBid, "updated bid must be superior to current highest bid");
 		require(auction[_id].startTime + 2 days >= now, "auction is finished");
-		bidderToBid[msg.sender] = bidderToBid[msg.sender].add(msg.value);
-		auction[_id].highestBid = bidderToBid[msg.sender];
+		_bidderToBid[msg.sender] = _bidderToBid[msg.sender].add(msg.value);
+		auction[_id].highestBid = _bidderToBid[msg.sender];
 	}
 
 
 	function claimAuction(uint256 _id) public payable{
 		require(dogsInAuction[_id] == true, "dog must be in auction");
 		require(now > auction[_id].startTime + 2 days, "auction is not finished yet");
-		require(bidderToBid[msg.sender] == auction[_id].highestBid, "sender is not the winner");
+		require(_bidderToBid[msg.sender] == auction[_id].highestBid, "sender is not the winner");
 		auction[_id].winner = msg.sender;
 
         _repayAuctionLosers(_id);
-		_erc721.transferFrom(ownerOf(_id), msg.sender, _id);
+
+		_transferAnimalFrom(ownerOf(_id), msg.sender, _id);
 
 		if(auction[_id].chairperson != address(uint160(address(this)))) {
-			auction[_id].chairperson.transfer(auction[_id].highestBid);
+			auction[_id].chairperson.transfer(auction[_id].highestBid - _fees(auction[_id].highestBid));
+			_availableBalance+=_fees(auction[_id].highestBid);
 		}
 
 		else {
-			availableBalance+=auction[_id].highestBid;
+			_availableBalance+=auction[_id].highestBid;
 		}
 
-
+        emit AuctionClaimed(_id, msg.sender);
 	}
 
 		function _auctionByContract(uint256 _id) internal  {
@@ -109,6 +117,9 @@ using SafeMath for uint256;
 
 		dogsInAuction[_id] = true;
 		auction[_id] = auc;
+
+		emit AuctionCreated(_id, 1, auc.chairperson);
+
 	}
 
 
@@ -119,11 +130,11 @@ using SafeMath for uint256;
 	function _repayAuctionLosers(uint256 _id) private{
 	for(uint i =0; i< auction[_id].bidders.length; i++) {
 		if(auction[_id].bidders[i] != auction[_id].winner) {
-			auction[_id].bidders[i].transfer(bidderToBid[auction[_id].bidders[i]]);
-			bidderToBid[auction[_id].bidders[i]] = 0;
+			auction[_id].bidders[i].transfer(_bidderToBid[auction[_id].bidders[i]]);
+			_bidderToBid[auction[_id].bidders[i]] = 0;
 		}
 	}
-	bidderToBid[auction[_id].winner] = 0;
+	_bidderToBid[auction[_id].winner] = 0;
 
 }
 

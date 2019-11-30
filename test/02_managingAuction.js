@@ -53,7 +53,7 @@ contract('managingAuction', accounts => {
 	await contractInstance.bidAuction(1, {from : accounts[3], value : 8})
 	
 	auction = await contractInstance.auction(1)
-	bidderToBid = await contractInstance.bidderToBid(accounts[3])
+	bidderToBid = await contractInstance.getBid({from : accounts[3]})
 	
 	assert.equal(auction.highestBid, 8)
 	assert.equal(bidderToBid, 8)
@@ -70,7 +70,7 @@ contract('managingAuction', accounts => {
 	await contractInstance.updateBid(1,{from : accounts[2], value : 3})	
 	
 	auction = await contractInstance.auction(1)
-	bidderToBid = await contractInstance.bidderToBid(accounts[2])
+	bidderToBid = await contractInstance.getBid({from : accounts[2]})
 	
 	assert.equal(auction.highestBid, 9)
 	assert.equal(bidderToBid, 9)

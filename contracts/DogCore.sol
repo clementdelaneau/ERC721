@@ -7,21 +7,21 @@ contract DogCore is Arena {
 
 
 function() external payable {
-	availableBalance += msg.value;
+	_availableBalance += msg.value;
 
 }
 
 
 function getAvailableBalance() external view onlyBy(owner) returns (uint256) {
-		return availableBalance;
+		return _availableBalance;
 }
 
 
 function withdrawAvailableBalance() external onlyBy(owner) {
-	require(availableBalance >= 0.1 ether,"availableBalance too small");
+	require(_availableBalance >= 0.1 ether,"availableBalance too small");
 
-	owner.transfer(availableBalance);
-	availableBalance = 0;
+	owner.transfer(_availableBalance);
+	_availableBalance = 0;
 
 }
 

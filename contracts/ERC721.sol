@@ -8,7 +8,7 @@ contract ERC721 is IERC721 {
 
 
     mapping (address => uint256) private _balanceOf;
-    mapping (uint256 => address payable) public _tokenOwner;
+    mapping (uint256 => address ) private _tokenOwner;
     mapping (uint256 => address) private _tokenApprovals;
     mapping (address => mapping (address => bool)) private _operatorApprovals;
     
@@ -32,7 +32,7 @@ contract ERC721 is IERC721 {
     }
 
     modifier isApprovedForTransfer(address _spender, uint256 _tokenId) {
-        require(msg.sender == _spender || getApproved(_tokenId) == _spender || isApprovedForAll(_tokenOwner[_tokenId], _spender));
+        require(ownerOf(_tokenId) == _spender || getApproved(_tokenId) == _spender || isApprovedForAll(_tokenOwner[_tokenId], _spender), "_spender is not approved for transfer");
         _;
     }
 
@@ -45,7 +45,7 @@ contract ERC721 is IERC721 {
     }
 
 
-    function ownerOf(uint256 _tokenId) public isNonZeroAddress(_tokenOwner[_tokenId]) view returns (address payable) {
+    function ownerOf(uint256 _tokenId) public isNonZeroAddress(_tokenOwner[_tokenId]) view returns (address) {
         return _tokenOwner[_tokenId];
 
     }
@@ -77,8 +77,8 @@ contract ERC721 is IERC721 {
 
 
 
-    function transferFrom(address _from, address payable _to, uint256 _tokenId) external isNonZeroAddress(_to) tokenExists(_tokenId) 
-    isApprovedForTransfer(msg.sender, _tokenId) payable{
+    function transferFrom(address _from, address _to, uint256 _tokenId) external payable isNonZeroAddress(_to) tokenExists(_tokenId) 
+    isApprovedForTransfer(_from, _tokenId) {
         require(_tokenOwner[_tokenId]==_from, "ERC721: transfer of token that is not owned");
         _balanceOf[_from] -= 1;
         _balanceOf[_to] += 1;
@@ -94,7 +94,7 @@ contract ERC721 is IERC721 {
 
 
 
-    function _mint(address payable to, uint256 tokenId) internal {
+    function _mint(address to, uint256 tokenId) internal {
         require(to != address(0), "ERC721: mint to the zero address");
         require(!_exists(tokenId), "ERC721: token already minted");
 
