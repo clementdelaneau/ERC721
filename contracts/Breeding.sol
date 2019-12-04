@@ -14,14 +14,16 @@ contract Breeding is AuctionSystem{
 
 		function breedAnimal(uint256 _dogId1, uint256 _dogId2) public {
 		require(dogsById[_dogId1].isMale == true && dogsById[_dogId2].isMale == false || dogsById[_dogId1].isMale == false && dogsById[_dogId2].isMale == true, "not possible to breed same sex animals");
-		require(_hasDog(msg.sender, _dogId1) || _hasDog(msg.sender, _dogId2), "message sender is not one of the token owner");
+		require(ownerOf(_dogId1) == msg.sender || ownerOf(_dogId2) == msg.sender, "message sender is not one of the token owner");
 		require(availableToBreed[_dogId1] && availableToBreed[_dogId2], "dogs have to be available to breed");
 		
 
-		Race _race = _determineRaceAfterBreed(_dogId1, _dogId2);
+		uint256 race = _determineRaceAfterBreed(uint256(dogsById[_dogId1].race),uint256(dogsById[_dogId2].race));
+		Race _race = Race(race);
+
 		uint8 _category = (dogsById[_dogId1].category + dogsById[_dogId2].category)/2;
 
-		if(_hasDog(msg.sender, _dogId1) && _hasDog(msg.sender, _dogId2))
+		if(ownerOf(_dogId1) == msg.sender && ownerOf(_dogId2) == msg.sender)
 		{
 			declareAnimal(msg.sender, _race, true, 0, _category);
 
@@ -37,14 +39,17 @@ contract Breeding is AuctionSystem{
 
 
 
-	function _determineRaceAfterBreed(uint256 _id1, uint256 _id2) internal view returns (Race race){
-		Dog memory _dog1 = dogsById[_id1];
-		Dog memory _dog2 = dogsById[_id2];
+	function _determineRaceAfterBreed(uint256 _race1, uint256 _race2) private pure returns (uint256 race){
 
-		if((_dog1.race == Race.Labrador && _dog2.race == Race.Pitbull) || (_dog1.race == Race.Pitbull && _dog2.race == Race.Labrador))
-		{
-			race = Race.Bullador;
+		if(_race1 == _race2) {
+			race = _race1;
 		}
+
+		else if((_race1 == 0 && _race2 == 1) || (_race1 == 1 && _race2 == 0))
+		{
+			race = 5;
+		}
+		/*
 		else if((_dog1.race == Race.Pitbull && _dog2.race == Race.Husky) || (_dog1.race == Race.Husky && _dog2.race == Race.Pitbull))
 		{
 			race = Race.Pitsky;
@@ -56,10 +61,10 @@ contract Breeding is AuctionSystem{
 		else if((_dog1.race == Race.Labrador && _dog2.race == Race.Husky) || (_dog1.race == Race.Husky && _dog2.race == Race.Labrador))
 		{
 			race = Race.Labrador_Husky;
-		}
+		}*/
 		else 
 		{
-			race = Race.Unknown;
+			race = 8;
 		} 
 		return race;
 

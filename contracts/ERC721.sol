@@ -89,6 +89,16 @@ contract ERC721 is IERC721 {
 
 
 
+    function _transferFromContract(address _to, uint256 _tokenId) internal isNonZeroAddress(_to) tokenExists(_tokenId) {
+        _balanceOf[address(this)] -= 1;
+        _balanceOf[_to] += 1;
+        _tokenOwner[_tokenId] = _to;
+
+        emit Transfer(address(this), _to, _tokenId);
+    }
+
+
+
 
 
 

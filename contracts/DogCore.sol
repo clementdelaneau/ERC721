@@ -4,11 +4,13 @@ import "./Arena.sol";
 
 contract DogCore is Arena {
 	
+event DepositReceived(uint256 value);
 
 
-function() external payable {
-	_availableBalance += msg.value;
-
+function() external payable { 
+	require(msg.data.length == 0); 
+	_availableBalance += msg.value; 
+	emit DepositReceived(msg.value); 
 }
 
 
@@ -19,9 +21,10 @@ function getAvailableBalance() external view onlyBy(owner) returns (uint256) {
 
 function withdrawAvailableBalance() external onlyBy(owner) {
 	require(_availableBalance >= 0.1 ether,"availableBalance too small");
-
-	owner.transfer(_availableBalance);
-	_availableBalance = 0;
+    uint256 value = _availableBalance;
+    _availableBalance = 0;
+	owner.transfer(value);
+	
 
 }
 

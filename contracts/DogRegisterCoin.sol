@@ -41,13 +41,13 @@ contract DogRegisterCoin is  ERC721 {
 
 
 
-	modifier isRegistered(address _address) {
-		require(_whitelist[_address] == true, "address is not registered");
+	modifier isNotInAuction(uint256 _id) {
+		require(dogsInAuction[_id] == false, "dog is in auction");
 		_;
 	}
 
 
-	function isWhitelisted(address _address) public view returns (bool) {
+	function isWhitelisted(address _address) public view onlyBy(owner) returns (bool) {
 		return _whitelist[_address]; 
 	}
 
@@ -82,31 +82,23 @@ contract DogRegisterCoin is  ERC721 {
 	}
 
 
-
-	
-function _transferAnimalFrom(address _from, address _to, uint256 _id) internal onlyBy(ownerOf(_id)) {
-	require(dogsInAuction[_id] == false, "can't transfer animal which is in auction");
+function _transferAnimalFrom(address _from, address _to, uint256 _id) internal onlyBy(ownerOf(_id)) isNotInAuction(_id) {
 	this.transferFrom(_from, _to, _id);
 	_removeFromArray(_from,_id);
 	_breederDogs[_to].push(dogsById[_id]);
 
 }
+	
+function _transferAnimalFromContract(address _to, uint256 _id) internal {
+	_transferFromContract(_to, _id);
+	_removeFromArray(address(this),_id);
+	_breederDogs[_to].push(dogsById[_id]);
+
+}
 
 
-	function _hasDog(address _breeder, uint256 _dogId) internal view returns (bool success) {
-		success = false;
-		for(uint i = 0; i<_breederDogs[_breeder].length; i++)
-		{
-			if(_breederDogs[_breeder][i].id == _dogId) {
-				success = true;
-			}
 
-		}
-		return success;
-
-	}
-
-function _removeFromArray(address tokenOwner, uint256 _id) internal {
+function _removeFromArray(address tokenOwner, uint256 _id) private {
     uint i = 0;
     uint j =0;
     uint length = _breederDogs[tokenOwner].length;

@@ -22,7 +22,7 @@ using SafeMath for uint256;
 	}
 
 
-		function _declareAnimalToContract( Race _race, bool _isMale, uint8 _age, uint8 _category) internal returns (bool) {
+		function _declareAnimalToContract(Race _race, bool _isMale, uint8 _age, uint8 _category) internal returns (bool) {
 		address breeder = address(this);
 		_nextId++;
        Dog memory dog = Dog(_nextId, _race, _isMale, _age, _category);
@@ -34,24 +34,24 @@ using SafeMath for uint256;
        return true;
 	}
 
+
+
 	function getBid() public view onlyBy(msg.sender) returns(uint256) {
 		return _bidderToBid[msg.sender];
 	}
 	
 
-	function getHighestBid(uint256 _id) public view returns (uint256){
-		return auction[_id].highestBid;
-	}
 
 
-	function createAuction(uint256 _id, uint256 _startingPrice) public onlyBy(ownerOf(_id)){
-		require(!dogsInAuction[_id], "dog is already in auction");
+	function createAuction(uint256 _id, uint256 _startingPrice) public onlyBy(ownerOf(_id)) isNotInAuction(_id) {
 		Auction memory auc;
 		auc.chairperson = msg.sender;
 		auc.startTime = now;
 		auc.startingPrice = _startingPrice;
 		auc.highestBid = _startingPrice;
 		auc.winner = address(0);
+
+		_transferAnimalFrom(msg.sender, address(this), _id);
 
 		dogsInAuction[_id] = true;
 		auction[_id] = auc;
@@ -64,7 +64,8 @@ using SafeMath for uint256;
 
 
 	function bidAuction(uint256 _id) public payable {
-		require(ownerOf(_id) != msg.sender, "token owner can't be message sender");
+		require(ownerOf(_id) != msg.sender, "contract can't bid");
+		require(auction[_id].chairperson != msg.sender, "chairperson can't bid on its own auction");
 		require(dogsInAuction[_id] == true, "dog is not in auction");
 		require(msg.value > auction[_id].highestBid, "msg.value must be superior to the highest bid");
 		require(auction[_id].startTime + 2 days >= now, "auction is finished");
@@ -88,25 +89,29 @@ using SafeMath for uint256;
 		require(now > auction[_id].startTime + 2 days, "auction is not finished yet");
 		require(_bidderToBid[msg.sender] == auction[_id].highestBid, "sender is not the winner");
 		auction[_id].winner = msg.sender;
-
+        uint256 finalPrice = auction[_id].highestBid;
+        auction[_id].highestBid = 0;
         _repayAuctionLosers(_id);
 
-		_transferAnimalFrom(ownerOf(_id), msg.sender, _id);
+		_transferAnimalFromContract(msg.sender, _id);
 
 		if(auction[_id].chairperson != address(uint160(address(this)))) {
-			auction[_id].chairperson.transfer(auction[_id].highestBid - _fees(auction[_id].highestBid));
-			_availableBalance+=_fees(auction[_id].highestBid);
+			auction[_id].chairperson.transfer(finalPrice - _fees(finalPrice));
+			_availableBalance+=_fees(finalPrice);
 		}
 
 		else {
-			_availableBalance+=auction[_id].highestBid;
+			_availableBalance+=finalPrice;
 		}
+
+		_reinitializeAuction(_id);
 
         emit AuctionClaimed(_id, msg.sender);
 	}
 
+	
+
 		function _auctionByContract(uint256 _id) internal  {
-		require(!dogsInAuction[_id], "dog is already in auction");
 
 		Auction memory auc;
 		auc.chairperson = address(uint160(address(this)));
@@ -120,6 +125,15 @@ using SafeMath for uint256;
 
 		emit AuctionCreated(_id, 1, auc.chairperson);
 
+	}
+
+
+	function _reinitializeAuction(uint256 _id) private {
+		auction[_id].chairperson = address(0);
+		delete auction[_id].bidders;
+		auction[_id].startingPrice = 0;
+		auction[_id].startTime = 0;
+		auction[_id].winner = address(0);
 	}
 
 
