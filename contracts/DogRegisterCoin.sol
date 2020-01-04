@@ -1,4 +1,4 @@
-pragma solidity ^0.5.12;
+pragma solidity ^0.6.0;
 
 
 import "./SafeMath.sol";
@@ -40,12 +40,18 @@ contract DogRegisterCoin is  ERC721 {
 	}
 
 
-
+/*
 	modifier isNotInAuction(uint256 _id) {
 		require(dogsInAuction[_id] == false, "dog is in auction");
 		_;
 	}
-
+*/
+function _isInAuction(uint256 id) internal returns(bool succes) {
+if(dogsInAuction[id] == true) {
+	succes = true;
+}
+return succes;
+}
 
 	function isWhitelisted(address _address) public view onlyBy(owner) returns (bool) {
 		return _whitelist[_address]; 
@@ -59,7 +65,7 @@ contract DogRegisterCoin is  ERC721 {
 	}
 
 
-	function declareAnimal(address _breeder, Race _race, bool _isMale, uint8 _age, uint8 _category) public isNonZeroAddress(_breeder) onlyBy(_breeder) returns (bool) {
+	function declareAnimal(address _breeder, Race _race, bool _isMale, uint8 _age, uint8 _category) public isNonZeroAddress(_breeder) onlyBy(_breeder) {
 		require(_whitelist[_breeder] == false, "breeder is already registered"); //breeder can only declare once a dog
 		registerBreeder(_breeder);
 		_nextId++;
@@ -70,7 +76,6 @@ contract DogRegisterCoin is  ERC721 {
        _mint(_breeder, _nextId);
 
        emit AnimalDeclared(_breeder, _nextId);
-       return true;
 	}
 
 
@@ -82,7 +87,9 @@ contract DogRegisterCoin is  ERC721 {
 	}
 
 
-function _transferAnimalFrom(address _from, address _to, uint256 _id) internal onlyBy(ownerOf(_id)) isNotInAuction(_id) {
+
+function _transferAnimalFrom(address _from, address _to, uint256 _id) internal onlyBy(ownerOf(_id)) {
+	require(!_isInAuction(_id));
 	this.transferFrom(_from, _to, _id);
 	_removeFromArray(_from,_id);
 	_breederDogs[_to].push(dogsById[_id]);
@@ -117,7 +124,7 @@ function _removeFromArray(address tokenOwner, uint256 _id) private {
 	delete _breederDogs[tokenOwner][length-1];
 
 	}
-	length--;
+	_breederDogs[tokenOwner].pop();
 
 }
 

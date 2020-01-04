@@ -60,6 +60,17 @@ contract('managingAuction', accounts => {
 	   
    })
    
+   
+      it('should not bid on its own auction', async() => {
+   	await contractInstance.declareAnimal(accounts[1],0,0,0,0, {from :accounts[1]})
+
+   	await contractInstance.createAuction(1,5, {from: accounts[1]})
+	
+   await tryCatch(contractInstance.bidAuction(1, {from : accounts[1], value : 6}),errTypes.revert)
+
+	   
+   })
+   
    it('should update bid', async() => {
    	await contractInstance.declareAnimal(accounts[1],0,0,0,0, {from :accounts[1]})
 

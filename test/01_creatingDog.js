@@ -30,6 +30,17 @@ contract("CreatingDogs", accounts =>  {
 	)
 	
 	
+	it('should not create a dog twice for the same address', async () => {
+
+		await contractInstance.declareAnimal(accounts[1],0,0,0,0, {from :accounts[1]})
+
+		await tryCatch(contractInstance.declareAnimal(accounts[1],5,1,0,1, {from :accounts[1]}), errTypes.revert)
+
+	}
+
+	)
+	
+	
 	
 	it('should not burn token if not owner', async() => {
 		

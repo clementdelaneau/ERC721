@@ -1,4 +1,4 @@
-pragma solidity ^0.5.12;
+pragma solidity ^0.6.0;
 
 import "./IERC721.sol";
 import "./SafeMath.sol";
@@ -40,18 +40,18 @@ contract ERC721 is IERC721 {
     
 
 
-    function balanceOf(address _address) public isNonZeroAddress(_address) view returns (uint256) {
+    function balanceOf(address _address) public override isNonZeroAddress(_address) view returns (uint256) {
         return _balanceOf[_address];
     }
 
 
-    function ownerOf(uint256 _tokenId) public isNonZeroAddress(_tokenOwner[_tokenId]) view returns (address) {
+    function ownerOf(uint256 _tokenId) public override isNonZeroAddress(_tokenOwner[_tokenId]) view returns (address) {
         return _tokenOwner[_tokenId];
 
     }
 
 
-    function approve(address _approved, uint256 _tokenId) external payable {
+    function approve(address _approved, uint256 _tokenId) external override payable {
         require(_approved != msg.sender, "ERC721 : Owner is already approved");
         require(_tokenOwner[_tokenId] == msg.sender || isApprovedForAll(_tokenOwner[_tokenId], msg.sender));
         _tokenApprovals[_tokenId] = _approved;
@@ -59,7 +59,7 @@ contract ERC721 is IERC721 {
         emit Approval(_tokenOwner[_tokenId], _approved, _tokenId);
     }
 
-    function setApprovalForAll(address _operator, bool _approved) external {
+    function setApprovalForAll(address _operator, bool _approved) external override{
         require(_operator != msg.sender, "ERC721: Owner is already approved");
         _operatorApprovals[msg.sender][_operator] = _approved;
 
@@ -67,17 +67,17 @@ contract ERC721 is IERC721 {
 
     }
 
-    function getApproved(uint256 _tokenId) public tokenExists(_tokenId) view returns (address) {
+    function getApproved(uint256 _tokenId) public override tokenExists(_tokenId) view returns (address) {
         return _tokenApprovals[_tokenId];
     }
 
-    function isApprovedForAll(address _owner, address _operator) public view returns (bool) {
+    function isApprovedForAll(address _owner, address _operator) public override view returns (bool) {
         return _operatorApprovals[_owner][_operator];
     }
 
 
 
-    function transferFrom(address _from, address _to, uint256 _tokenId) external payable isNonZeroAddress(_to) tokenExists(_tokenId) 
+    function transferFrom(address _from, address _to, uint256 _tokenId) external override payable isNonZeroAddress(_to) tokenExists(_tokenId) 
     isApprovedForTransfer(_from, _tokenId) {
         require(_tokenOwner[_tokenId]==_from, "ERC721: transfer of token that is not owned");
         _balanceOf[_from] -= 1;

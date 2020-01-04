@@ -1,4 +1,4 @@
-pragma solidity ^0.5.12;
+pragma solidity ^0.6.0;
 
 import "./Arena.sol";
 
@@ -7,7 +7,8 @@ contract DogCore is Arena {
 event DepositReceived(uint256 value);
 
 
-function() external payable { 
+
+receive() external payable { 
 	require(msg.data.length == 0); 
 	_availableBalance += msg.value; 
 	emit DepositReceived(msg.value); 

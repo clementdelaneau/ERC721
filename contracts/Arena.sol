@@ -1,4 +1,4 @@
-pragma solidity ^0.5.12;
+pragma solidity ^0.6.0;
 
 import "./Breeding.sol";
 
@@ -7,16 +7,20 @@ contract Arena is Breeding {
 
     event FightProcessed(uint256 dog1, uint256 dog2, address winner);
 
-	mapping(uint256 => uint256) private fightProposition;
 	mapping(uint256 => Fight) public fightsById; 
+	mapping (uint256 => uint256) dogToLastFight;
+	
+	
 
 	 uint256 private _nonce;
-
+     uint256 private _fightId;
 
 
 	struct Fight {
+		uint256 id;
 		uint256 dog1;
 		uint256 dog2;
+		uint256 startime;
 		uint256 victoriousDog;
 		uint256 bid;
 		bool accepted;
@@ -26,56 +30,51 @@ contract Arena is Breeding {
 
 
 
-	function proposeToFight(uint256 _myDog, uint256 _opponent) public onlyBy(ownerOf(_myDog)) isNotInAuction(_myDog) isNotInAuction(_opponent) payable  {
-		require(fightProposition[_myDog] == 0, "dog owner not already engaged in fight");
-		require(fightProposition[_opponent] == 0, "dog opponent not already engaged in a fight");
+	function proposeToFight(uint256 _myDog, uint256 _opponent) public onlyBy(ownerOf(_myDog)) payable  {
+	    require(!_isInAuction(_myDog) && !_isInAuction(_opponent));
 		require(ownerOf(_opponent) != msg.sender, "_opponent can't be from sender");
 		require(msg.value > 0, "value must be strictly positive");
-		fightProposition[_myDog] = _opponent;
+		require(now >= fightsById[dogToLastFight[_myDog]].startime + 1 days);
+		require(now >= fightsById[dogToLastFight[_opponent]].startime + 1 days);
+		_fightId++;
 		uint256 _bid = uint256(msg.value);
-		Fight memory fight = Fight(_myDog, _opponent, 0, _bid, false, address(0));
-		fightsById[_myDog] = fight;
-
-
+		Fight memory fight = Fight(_fightId, _myDog, _opponent, now, 0, _bid, false, address(0));
+		fightsById[_fightId] = fight;
 	}
 
 
-	function agreeToFight(uint256 _myDog, uint256 _opponent) public onlyBy(ownerOf(_myDog)) payable {
-		require(fightProposition[_opponent] == _myDog);
-		require(fightsById[_opponent].bid ==uint256(msg.value));
-		require(fightsById[_opponent].accepted == false);
-		fightProposition[_myDog] = _opponent;
-		fightsById[_opponent].accepted = true;
+	function agreeToFight(uint256 _id) public onlyBy(ownerOf(fightsById[_id].dog2)) payable {
+		require(fightsById[_id].bid == uint256(msg.value), "sent value should be the same as the bid");
+		require(fightsById[_id].accepted == false, "opponent's dog should not be engaged in a fight");
+		require(now >= fightsById[dogToLastFight[fightsById[_id].dog1]].startime + 1 days);
+		require(now >= fightsById[dogToLastFight[fightsById[_id].dog2]].startime + 1 days);
+		dogToLastFight[fightsById[_id].dog1] = _id;
+		dogToLastFight[fightsById[_id].dog2] = _id;		
+		fightsById[_id].accepted = true;
+
 		uint8 rand = _random();
 
 		if(rand == 0) 
 		{
-			fightsById[_opponent].winner = ownerOf(_myDog);
-			fightsById[_opponent].victoriousDog = _myDog;
+			fightsById[_id].winner = ownerOf(fightsById[_id].dog1);
+			fightsById[_id].victoriousDog = fightsById[_id].dog1;
 
 		}
 		else 
 		{
-			fightsById[_opponent].winner = ownerOf(_opponent);
-			fightsById[_opponent].victoriousDog = _opponent;
+			fightsById[_id].winner = ownerOf(fightsById[_id].dog2);
+			fightsById[_id].victoriousDog = fightsById[_id].dog2;
 		}
-		fightProposition[fightProposition[fightsById[_opponent].victoriousDog]] =0;
 
-		emit FightProcessed(_opponent, _myDog, fightsById[_opponent].winner);
-	}
+		emit FightProcessed(fightsById[_id].dog1, fightsById[_id].dog2, fightsById[_id].winner);
 
-
-
-	function claimAfterFight(uint256 _id) public onlyBy(fightsById[_id].winner) payable {
-		address payable winner = address(uint160(fightsById[_id].winner));
+		address payable winner = payable(fightsById[_id].winner);
         uint256 gain = fightsById[_id].bid;
         fightsById[_id].bid = 0;
 		winner.transfer(2*gain);
-		fightProposition[fightsById[_id].victoriousDog] = 0;
-		_reinitializeFight(_id);
-	}
 
 
+		}
 
 
 
@@ -86,12 +85,5 @@ contract Arena is Breeding {
 
    }
 
-   function _reinitializeFight(uint256 _id) private {
-   	fightsById[_id].dog1 = 0;
-   	fightsById[_id].dog2 = 0;
-   	fightsById[_id].victoriousDog = 0;
-   	fightsById[_id].accepted = false;
-   	fightsById[_id].winner = address(0);
-   }
    
 }

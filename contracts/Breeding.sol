@@ -1,4 +1,4 @@
-pragma solidity ^0.5.12;
+pragma solidity ^0.6.0;
 
 import "./Auction.sol";
 
@@ -50,18 +50,19 @@ contract Breeding is AuctionSystem{
 			race = 5;
 		}
 		/*
-		else if((_dog1.race == Race.Pitbull && _dog2.race == Race.Husky) || (_dog1.race == Race.Husky && _dog2.race == Race.Pitbull))
+		else if((_race1 == 1 && _race2 == 4) || (_race1 == 4 && _race2 == 1))
 		{
-			race = Race.Pitsky;
+			race = 6;
 		}
-		else if((_dog1.race == Race.Terrier && _dog2.race == Race.Bouldog) || (_dog1.race == Race.Bouldog && _dog2.race == Race.Terrier))
+		else if((_race1 == 2 && _race2 == 3) || (_race1 == 3 && _race2 == 2))
 		{
-			race = Race.Pitbull;
+			race = 1;
 		}
-		else if((_dog1.race == Race.Labrador && _dog2.race == Race.Husky) || (_dog1.race == Race.Husky && _dog2.race == Race.Labrador))
+		else if((_race1 == 0 && _race2 == 4) || (_race1 == 4 && _race2 == 0))
 		{
-			race = Race.Labrador_Husky;
-		}*/
+			race = 7;
+		}
+		*/
 		else 
 		{
 			race = 8;

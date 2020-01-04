@@ -1,4 +1,4 @@
-pragma solidity ^0.5.12;
+pragma solidity ^0.6.0;
 
 import "./DogRegisterCoin.sol";
 
@@ -43,7 +43,8 @@ using SafeMath for uint256;
 
 
 
-	function createAuction(uint256 _id, uint256 _startingPrice) public onlyBy(ownerOf(_id)) isNotInAuction(_id) {
+	function createAuction(uint256 _id, uint256 _startingPrice) public onlyBy(ownerOf(_id)) {
+		require(!_isInAuction(_id));
 		Auction memory auc;
 		auc.chairperson = msg.sender;
 		auc.startTime = now;
@@ -85,7 +86,6 @@ using SafeMath for uint256;
 
 
 	function claimAuction(uint256 _id) public payable{
-		require(dogsInAuction[_id] == true, "dog must be in auction");
 		require(now > auction[_id].startTime + 2 days, "auction is not finished yet");
 		require(_bidderToBid[msg.sender] == auction[_id].highestBid, "sender is not the winner");
 		auction[_id].winner = msg.sender;
@@ -95,7 +95,7 @@ using SafeMath for uint256;
 
 		_transferAnimalFromContract(msg.sender, _id);
 
-		if(auction[_id].chairperson != address(uint160(address(this)))) {
+		if(auction[_id].chairperson != payable(address(this))) {
 			auction[_id].chairperson.transfer(finalPrice - _fees(finalPrice));
 			_availableBalance+=_fees(finalPrice);
 		}
@@ -104,7 +104,7 @@ using SafeMath for uint256;
 			_availableBalance+=finalPrice;
 		}
 
-		_reinitializeAuction(_id);
+		auction[_id] = Auction(address(0),new address payable[](0),0,0,0,address(0));
 
         emit AuctionClaimed(_id, msg.sender);
 	}
@@ -114,7 +114,7 @@ using SafeMath for uint256;
 		function _auctionByContract(uint256 _id) internal  {
 
 		Auction memory auc;
-		auc.chairperson = address(uint160(address(this)));
+		auc.chairperson = payable((address(this)));
 		auc.startTime = now;
 		auc.startingPrice = 1;
 		auc.highestBid = 0;
@@ -126,18 +126,6 @@ using SafeMath for uint256;
 		emit AuctionCreated(_id, 1, auc.chairperson);
 
 	}
-
-
-	function _reinitializeAuction(uint256 _id) private {
-		auction[_id].chairperson = address(0);
-		delete auction[_id].bidders;
-		auction[_id].startingPrice = 0;
-		auction[_id].startTime = 0;
-		auction[_id].winner = address(0);
-	}
-
-
-
 
 
 
