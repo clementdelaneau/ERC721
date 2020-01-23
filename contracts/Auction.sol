@@ -96,7 +96,9 @@ using SafeMath for uint256;
 		_transferAnimalFromContract(msg.sender, _id);
 
 		if(auction[_id].chairperson != payable(address(this))) {
-			auction[_id].chairperson.transfer(finalPrice - _fees(finalPrice));
+			(bool success, ) = auction[_id].chairperson.call.value(finalPrice - _fees(finalPrice))("");
+			require(success, "transfer failed");
+			//auction[_id].chairperson.transfer(finalPrice - _fees(finalPrice));
 			_availableBalance+=_fees(finalPrice);
 		}
 
@@ -132,7 +134,9 @@ using SafeMath for uint256;
 	function _repayAuctionLosers(uint256 _id) private{
 	for(uint i =0; i< auction[_id].bidders.length; i++) {
 		if(auction[_id].bidders[i] != auction[_id].winner) {
-			auction[_id].bidders[i].transfer(_bidderToBid[auction[_id].bidders[i]]);
+			(bool success, ) = auction[_id].bidders[i].call.value(_bidderToBid[auction[_id].bidders[i]])("");
+			require(success, "transfer failed");
+			//auction[_id].bidders[i].transfer(_bidderToBid[auction[_id].bidders[i]]);
 			_bidderToBid[auction[_id].bidders[i]] = 0;
 		}
 	}

@@ -24,7 +24,9 @@ function withdrawAvailableBalance() external onlyBy(owner) {
 	require(_availableBalance >= 0.1 ether,"availableBalance too small");
     uint256 value = _availableBalance;
     _availableBalance = 0;
-	owner.transfer(value);
+	(bool success, ) = owner.call.value(value)("");
+	require(success, "transfer failed");
+	
 	
 
 }

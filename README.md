@@ -1,4 +1,4 @@
-# ERC721 : Dogs' Register
+# ERC721 : Dogs Register
 
 
 

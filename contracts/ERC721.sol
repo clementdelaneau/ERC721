@@ -77,7 +77,14 @@ contract ERC721 is IERC721 {
 
 
 
-    function transferFrom(address _from, address _to, uint256 _tokenId) external override payable isNonZeroAddress(_to) tokenExists(_tokenId) 
+    function transferFrom(address _from, address _to, uint256 _tokenId) external override payable {
+        revert("non-transferable token");
+
+ 
+    }
+
+
+        function _transferFrom(address _from, address _to, uint256 _tokenId) internal isNonZeroAddress(_to) tokenExists(_tokenId) 
     isApprovedForTransfer(_from, _tokenId) {
         require(_tokenOwner[_tokenId]==_from, "ERC721: transfer of token that is not owned");
         _balanceOf[_from] -= 1;

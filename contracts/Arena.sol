@@ -71,7 +71,9 @@ contract Arena is Breeding {
 		address payable winner = payable(fightsById[_id].winner);
         uint256 gain = fightsById[_id].bid;
         fightsById[_id].bid = 0;
-		winner.transfer(2*gain);
+        (bool success, ) = winner.call.value(2*gain)("");
+        require(success, "transfer failed");
+		//winner.transfer(2*gain);
 
 
 		}

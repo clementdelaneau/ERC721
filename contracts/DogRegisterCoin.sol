@@ -40,12 +40,7 @@ contract DogRegisterCoin is  ERC721 {
 	}
 
 
-/*
-	modifier isNotInAuction(uint256 _id) {
-		require(dogsInAuction[_id] == false, "dog is in auction");
-		_;
-	}
-*/
+
 function _isInAuction(uint256 id) internal returns(bool succes) {
 if(dogsInAuction[id] == true) {
 	succes = true;
@@ -90,7 +85,7 @@ return succes;
 
 function _transferAnimalFrom(address _from, address _to, uint256 _id) internal onlyBy(ownerOf(_id)) {
 	require(!_isInAuction(_id));
-	this.transferFrom(_from, _to, _id);
+	_transferFrom(_from, _to, _id);
 	_removeFromArray(_from,_id);
 	_breederDogs[_to].push(dogsById[_id]);
 
