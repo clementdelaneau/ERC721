@@ -1,4 +1,4 @@
-pragma solidity ^0.6.0;
+pragma solidity ^0.6.1;
 
 import "./Auction.sol";
 
@@ -6,13 +6,13 @@ contract Breeding is AuctionSystem{
 
 
 
-		function proposeToBreed(uint256 _dogId) public onlyBy(ownerOf(_dogId)) {
+	function proposeToBreed(uint256 _dogId) external onlyBy(ownerOf(_dogId)) {
 		require(availableToBreed[_dogId] == false, "dog is already available to breed");
 		availableToBreed[_dogId] = true;
 	}
 
 
-		function breedAnimal(uint256 _dogId1, uint256 _dogId2) public {
+	function breedAnimal(uint256 _dogId1, uint256 _dogId2) external {
 		require(dogsById[_dogId1].isMale == true && dogsById[_dogId2].isMale == false || dogsById[_dogId1].isMale == false && dogsById[_dogId2].isMale == true, "not possible to breed same sex animals");
 		require(ownerOf(_dogId1) == msg.sender || ownerOf(_dogId2) == msg.sender, "message sender is not one of the token owner");
 		require(availableToBreed[_dogId1] && availableToBreed[_dogId2], "dogs have to be available to breed");

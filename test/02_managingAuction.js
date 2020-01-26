@@ -1,12 +1,14 @@
 const AuctionSystem = artifacts.require("./AuctionSystem.sol")
 let contractInstance
-
+//const MockTime = artifacts.require("./MockTime")
+//let time 
 let tryCatch = require("./exceptions.js").tryCatch;
 let errTypes = require("./exceptions.js").errTypes;
 	
 contract('managingAuction', accounts => {
 	beforeEach('setup contract for each test', async () => {
 		contractInstance = await AuctionSystem.new({from : accounts[0]})
+		//time = await MockTime.new()
 	})
 	
    it('should create auction', async() => {
@@ -100,6 +102,16 @@ contract('managingAuction', accounts => {
 	await tryCatch(contractInstance.claimAuction(1, {from :accounts[2]}), errTypes.revert)
 
    })
+   
+   /*
+   it('winner should claim auction after the end date', async() => {
+	   	await contractInstance.declareAnimal(accounts[1],0,0,0,0, {from :accounts[1]})
+   	await contractInstance.createAuction(1,50000, {from: accounts[1]})
+
+   	await contractInstance.bidAuction(1,{from :accounts[2], value: web3.utils.toWei('600000', 'wei')})   
+	await contractInstance.setBlockTime(1680169600)
+	await contractInstance.claimAuction(1, {from: accounts[2]})
+   })*/
 	
 	
 }
