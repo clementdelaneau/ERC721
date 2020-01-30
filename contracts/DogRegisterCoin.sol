@@ -41,6 +41,7 @@ contract DogRegisterCoin is ERC721 {
 		uint8 category;
 	}
 
+
 	function _isInAuction(uint256 id) internal view returns (bool succes) {
 		if (dogsInAuction[id] == true) {
 			succes = true;
