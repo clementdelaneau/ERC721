@@ -103,9 +103,20 @@ declareAnimal: function(event) {
 
     add = document.getElementById("id1").value;
     r = document.getElementById("id2").value;
-    s = document.getElementById("id3").value;
     q = document.getElementById("id4").value;
     t = document.getElementById("id5").value;
+    var s;
+
+    var radios = document.getElementsByName("gender");
+    for(var i =0; i<radios.length;i++) {
+      if(radios[i].checked) { 
+        s = document.getElementById("male").value;
+      }
+      else {
+        s = document.getElementById("female").value;
+      }
+
+    }
 
     var account = accounts[0];
 
