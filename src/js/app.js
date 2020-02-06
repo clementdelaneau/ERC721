@@ -56,6 +56,10 @@ bindEvents: function() {
   $(document).on('click', '.btn-breedAnimal', App.breedAnimal);
   $(document).on('click','.btn-proposeToFight', App.proposeToFight);
   $(document).on('click','.btn-agreeToFight', App.agreeToFight);
+  $(document).on('click','.btn-createAuction', App.createAuction);
+  $(document).on('click','.btn-bidAuction', App.bidAuction);
+  $(document).on('click','.btn-updateBid', App.updateBid);
+  $(document).on('click', '.btn-claimAuction', App.claimAuction);
 },
 
 
@@ -220,6 +224,129 @@ agreeToFight: function() {
 
     // Execute adopt as a transaction by sending account
     return dogCoreInstance.agreeToFight(id, {from : account, value : value});
+  }).then(function(result) {
+    console.log(result);
+  }).catch(function(err) {
+    console.log(err.message);
+  });
+});
+
+},
+
+
+createAuction : function() {
+
+    var dogCoreInstance;
+
+  web3.eth.getAccounts(function(error, accounts) {
+    if (error) {
+      console.log(error);
+    }
+
+    id = document.getElementById("dogIdAuc").value;
+    startingPrice = document.getElementById("startingPrice").value;
+
+
+    var account = accounts[0];
+
+
+    App.contracts.DogCore.deployed().then(function(instance) {
+      dogCoreInstance = instance;
+
+    // Execute adopt as a transaction by sending account
+    return dogCoreInstance.createAuction(id, startingPrice, {from : account});
+  }).then(function(result) {
+    console.log(result);
+  }).catch(function(err) {
+    console.log(err.message);
+  });
+});
+
+
+},
+
+
+bidAuction : function() {
+
+  var dogCoreInstance;
+
+  web3.eth.getAccounts(function(error, accounts) {
+    if (error) {
+      console.log(error);
+    }
+
+    id = document.getElementById("auctionId").value;
+    bid = document.getElementById("bidAuc").value;
+
+
+    var account = accounts[0];
+
+
+    App.contracts.DogCore.deployed().then(function(instance) {
+      dogCoreInstance = instance;
+
+    // Execute adopt as a transaction by sending account
+    return dogCoreInstance.bidAuction(id, {from : account, value: bid});
+  }).then(function(result) {
+    console.log(result);
+  }).catch(function(err) {
+    console.log(err.message);
+  });
+});
+
+},
+
+
+updateBid : function() {
+
+  var dogCoreInstance;
+
+  web3.eth.getAccounts(function(error, accounts) {
+    if (error) {
+      console.log(error);
+    }
+
+    id = document.getElementById("updateBidAucId").value;
+    bid = document.getElementById("bidUpBid").value;
+
+
+    var account = accounts[0];
+
+
+    App.contracts.DogCore.deployed().then(function(instance) {
+      dogCoreInstance = instance;
+
+    // Execute adopt as a transaction by sending account
+    return dogCoreInstance.updateBid(id, {from : account, value: bid});
+  }).then(function(result) {
+    console.log(result);
+  }).catch(function(err) {
+    console.log(err.message);
+  });
+});
+
+},
+
+
+claimAuction : function() {
+
+    var dogCoreInstance;
+
+  web3.eth.getAccounts(function(error, accounts) {
+    if (error) {
+      console.log(error);
+    }
+
+    id = document.getElementById("claimAucId").value;
+
+    var account = accounts[0];
+
+
+    App.contracts.DogCore.deployed().then(function(instance) {
+      dogCoreInstance = instance;
+
+    // Execute adopt as a transaction by sending account
+    return dogCoreInstance.claimAuction(id, {from : account});
   }).then(function(result) {
     console.log(result);
   }).catch(function(err) {
